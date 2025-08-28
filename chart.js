@@ -3,7 +3,6 @@ const axios = require("axios");
 const cloudinary = require("cloudinary").v2;
 require('dotenv').config(); // <-- load .env in the current working dir
 
-
 // ====== ENV ======
 const NOTION_TOKEN      = process.env.NOTION_TOKEN;       // secret_xxx
 const DATABASE_ID       = process.env.DATABASE_ID;        // your DB id
@@ -157,7 +156,7 @@ async function buildChart(rows, title) {
 }
 
 // ---------- Upload PNG to Cloudinary ----------
-async function uploadToCloudinary(buffer, publicIdHint) {
+/*async function uploadToCloudinary(buffer, publicIdHint) {
   const res = await cloudinary.uploader.upload_stream({
     resource_type: "image",
     folder: CLOUD_FOLDER,
@@ -176,7 +175,19 @@ async function uploadToCloudinary(buffer, publicIdHint) {
     );
     stream.end(buffer);
   });
+}*/
+
+async function uploadToCloudinary(buffer, publicIdHint) {
+  const folder = process.env.CLOUDINARY_UPLOAD_FOLDER || "notion-charts";
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: "image", folder, public_id: publicIdHint, overwrite: true },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+    stream.end(buffer);
+  });
 }
+
 
 // ---------- Embed into Notion ----------
 async function embedImageOnPage(pageId, imageUrl, captionText) {
@@ -193,7 +204,7 @@ async function embedImageOnPage(pageId, imageUrl, captionText) {
 }
 
 // ---------- Main ----------
-(async () => {
+/*(async () => {
   try {
     const { weekStart, weekEnd, label } = parseArgs();
     console.log(`📅 Building chart for ${label}`);
@@ -225,5 +236,69 @@ async function embedImageOnPage(pageId, imageUrl, captionText) {
 
   } catch (err) {
     console.error("❌ Error:", err.response?.data || err.message);
+  }
+})();*/
+
+(async () => {
+  try {
+    const { weekStart, weekEnd, label } = parseArgs();
+    console.log(`📅 Building chart for ${label}`);
+
+    // 1) Fetch data from Notion
+    const masters = await getMasterTasksMap();
+    const counts  = await getDoneCountsByTask(weekStart, weekEnd);
+
+    // 2) Compute rows
+    const rows = Object.keys(masters)
+      .map(name => {
+        const target  = masters[name].target || 0;
+        const count   = counts[name] || 0;
+        const percent = target > 0 ? (count / target) * 100 : 0;
+        return { name, target, count, percent };
+      })
+      .sort((a, b) => b.percent - a.percent);
+
+    const title = `Weekly Count % (${weekStart} → ${weekEnd})`;
+
+    // 3) Render chart (PNG buffer)
+    const png = await buildChart(rows, title);
+
+    // 4) Upload to Cloudinary
+    const publicIdHint = `week_${weekStart}_to_${weekEnd}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+    let uploaded;
+    try {
+      uploaded = await uploadToCloudinary(png, publicIdHint);
+    } catch (upErr) {
+      // Cloudinary sometimes returns a late 499 even after upload succeeds.
+      // If you see this often, you can rethrow or exit gracefully.
+      console.error("⚠️ Cloudinary upload error:", upErr.message || upErr);
+      throw upErr; // keep as fatal unless you want to tolerate it
+    }
+
+    const publicUrl = uploaded.secure_url;
+    console.log("🌐 Cloudinary URL:", publicUrl);
+
+    // 5) Embed in Notion
+    try {
+      await embedImageOnPage(DASHBOARD_PAGE_ID, publicUrl, title);
+      console.log("✅ Chart embedded on Notion dashboard");
+    } catch (embedErr) {
+      console.error("❌ Failed to embed chart in Notion:", embedErr.response?.data || embedErr.message);
+      throw embedErr;
+    }
+
+  } catch (err) {
+    // Better diagnostics
+    if (err?.http_code === 499 || /Request Timeout/i.test(err?.message || "")) {
+      console.warn("⚠️ Cloudinary reported a timeout after upload. Chart likely succeeded. Ignoring.");
+      process.exit(0);
+    }
+    if (err.response) {
+      console.error("❌ Error:", err.response.status, err.response.statusText);
+      console.error("Details:", JSON.stringify(err.response.data, null, 2));
+    } else {
+      console.error("❌ Error:", err.message || err);
+    }
+    process.exit(1);
   }
 })();
