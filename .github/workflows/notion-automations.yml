@@ -50,7 +50,7 @@ jobs:
           echo "It's 00:01 Berlin — proceeding."
 
       - name: Create today's tasks
-        run: node createTasks.js
+        run: node notion-daily-tasks.js
 
       - name: Build & embed weekly chart
         run: node chart.js
