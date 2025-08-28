@@ -1,0 +1,56 @@
+name: Notion Automations (Daily + Chart)
+
+on:
+  schedule:
+    # Run at 22:01 and 23:01 UTC every day.
+    # One of these will always be 00:01 in Europe/Berlin (handles DST).
+    - cron: "1 22 * * *"
+    - cron: "1 23 * * *"
+  workflow_dispatch: {}  # allow manual run from the Actions tab
+
+jobs:
+  run-automations:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Berlin
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      DATABASE_ID: ${{ secrets.DATABASE_ID }}
+      DASHBOARD_PAGE_ID: ${{ secrets.DASHBOARD_PAGE_ID }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      CLOUDINARY_UPLOAD_FOLDER: ${{ secrets.CLOUDINARY_UPLOAD_FOLDER }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm i
+          fi
+
+      # Gate so we only run at exactly 00:01 Berlin,
+      # even though we scheduled two UTC times.
+      - name: Run only at 00:01 Berlin
+        run: |
+          now=$(TZ=Europe/Berlin date +'%H:%M')
+          if [ "$now" != "00:01" ]; then
+            echo "It's $now Berlin time; skipping. We only run at 00:01."
+            exit 0
+          fi
+          echo "It's 00:01 Berlin — proceeding."
+
+      - name: Create today's tasks
+        run: node notion-daily-tasks.js
+
+      - name: Build & embed weekly chart
+        run: node chart.js
