@@ -1,0 +1,24 @@
+{
+  "name": "notion-helper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "notion-daily-tasks.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "daily":"node notion-daily-tasks.js",
+    "chart":"node chart.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "chart.js": "^4.5.0",
+    "chartjs-node-canvas": "^5.0.0",
+    "cloudinary": "^2.7.0",
+    "dotenv": "^17.2.1",
+    "form-data": "^4.0.4",
+    "quickchart-js": "^3.1.3"
+  }
+}
