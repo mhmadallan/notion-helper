@@ -1,0 +1,52 @@
+name: Notion Chart (23:59 Berlin)
+
+on:
+  schedule:
+    # 21:59 and 22:59 UTC cover 23:59 Berlin across DST switches
+    - cron: "59 21 * * *"
+    - cron: "59 22 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  nightly-chart:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Berlin
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      DATABASE_ID: ${{ secrets.DATABASE_ID }}
+      DASHBOARD_PAGE_ID: ${{ secrets.DASHBOARD_PAGE_ID }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      CLOUDINARY_UPLOAD_FOLDER: ${{ secrets.CLOUDINARY_UPLOAD_FOLDER }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm i
+          fi
+
+      # Gate to exactly 23:59 Berlin
+      - name: Run only at 23:59 Berlin
+        run: |
+          now=$(TZ=Europe/Berlin date +'%H:%M')
+          if [ "$now" != "23:59" ]; then
+            echo "It's $now Berlin time; skipping. We only run at 23:59."
+            exit 0
+          fi
+          echo "It's 23:59 Berlin — proceeding."
+
+      # Build & embed the weekly chart (your script already removes same-week old chart)
+      - name: Build & embed weekly chart
+        run: node chart_cloudinary.js
