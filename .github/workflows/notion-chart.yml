@@ -49,4 +49,4 @@ jobs:
 
       # Build & embed the weekly chart (your script already removes same-week old chart)
       - name: Build & embed weekly chart
-        run: node chart_cloudinary.js
+        run: node chart.js
