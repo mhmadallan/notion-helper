@@ -1,15 +1,14 @@
-name: Notion Automations (Daily + Chart)
+name: Notion Daily Tasks (00:01 Berlin)
 
 on:
   schedule:
-    # Run at 22:01 and 23:01 UTC every day.
-    # One of these will always be 00:01 in Europe/Berlin (handles DST).
+    # 22:01 and 23:01 UTC cover 00:01 Berlin across DST switches
     - cron: "1 22 * * *"
     - cron: "1 23 * * *"
-  workflow_dispatch: {}  # allow manual run from the Actions tab
+  workflow_dispatch: {}
 
 jobs:
-  run-automations:
+  daily-tasks:
     runs-on: ubuntu-latest
     env:
       TZ: Europe/Berlin
@@ -38,8 +37,7 @@ jobs:
             npm i
           fi
 
-      # Gate so we only run at exactly 00:01 Berlin,
-      # even though we scheduled two UTC times.
+      # Gate to exactly 00:01 Berlin
       - name: Run only at 00:01 Berlin
         run: |
           now=$(TZ=Europe/Berlin date +'%H:%M')
@@ -51,6 +49,3 @@ jobs:
 
       - name: Create today's tasks
         run: node notion-daily-tasks.js
-
-      - name: Build & embed weekly chart
-        run: node chart.js
