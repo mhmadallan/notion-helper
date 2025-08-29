@@ -2,7 +2,8 @@ name: Notion Daily Tasks (00:01 Berlin)
 
 on:
   schedule:
-    # 22:01 and 23:01 UTC cover 00:01 Berlin across DST switches
+    - cron: "28 8 * * *"   # runs at 05:50 UTC today
+    # keep your normal lines too
     - cron: "1 22 * * *"
     - cron: "1 23 * * *"
   workflow_dispatch: {}
