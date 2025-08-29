@@ -203,6 +203,32 @@ async function embedImageOnPage(pageId, imageUrl, captionText) {
   );
 }
 
+async function removeOldChartsForWeek(pageId, weekLabel) {
+  try {
+    const res = await axios.get(
+      `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`,
+      { headers }
+    );
+
+    // Find image blocks with caption or title containing the current week label
+    const imageBlocks = res.data.results.filter(b => 
+      b.type === "image" &&
+      (
+        b.image.caption?.some(c => c.plain_text.includes(weekLabel)) || 
+        (b.image.external?.url && b.image.external.url.includes(weekLabel.replace(/\s+/g, "_")))
+      )
+    );
+
+    for (const block of imageBlocks) {
+      await axios.delete(`https://api.notion.com/v1/blocks/${block.id}`, { headers });
+      console.log(`🗑️ Deleted old chart block for week ${weekLabel}`);
+    }
+  } catch (err) {
+    console.error("⚠️ Could not remove old chart for week:", err.response?.data || err.message);
+  }
+}
+
+
 // ---------- Main ----------
 /*(async () => {
   try {
@@ -278,6 +304,13 @@ async function embedImageOnPage(pageId, imageUrl, captionText) {
     const publicUrl = uploaded.secure_url;
     console.log("🌐 Cloudinary URL:", publicUrl);
 
+     // ✅ Try to remove old chart for the same week
+    try {
+      await removeOldChartsForWeek(DASHBOARD_PAGE_ID, weekStart, weekEnd);
+      console.log("🧹 Old chart(s) for this week removed");
+    } catch (err) {
+      console.error("⚠️ Could not remove old chart(s):", err.response?.data || err.message);
+    }
     // 5) Embed in Notion
     try {
       await embedImageOnPage(DASHBOARD_PAGE_ID, publicUrl, title);
