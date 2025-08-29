@@ -3,9 +3,12 @@ name: Notion Chart (23:59 Berlin)
 on:
   schedule:
     # 21:59 and 22:59 UTC cover 23:59 Berlin across DST switches
-    - cron: "59 21 * * *"
-    - cron: "59 22 * * *"
+   # - cron: "59 21 * * *"
+   # - cron: "59 22 * * *"
+ # workflow_dispatch: {}
+    - cron: "*/5 * * * *"   # every 5 minutes (UTC)
   workflow_dispatch: {}
+
 
 jobs:
   nightly-chart:
