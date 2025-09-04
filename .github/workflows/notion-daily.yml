@@ -3,9 +3,9 @@ name: Notion Daily Tasks (00:01 Berlin)
 on:
   schedule:
     # keep your normal lines too
-    - cron: "1 22 * * *"
+    - cron: "11 22 * * *"
     - cron: "31 22 * * *"
-    - cron: "1 23 * * *"
+    - cron: "11 23 * * *"
     - cron: "31 23 * * *"
   workflow_dispatch: {}
 
