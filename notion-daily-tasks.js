@@ -35,7 +35,7 @@ const tasks = [
     { name: "Gym Chest Wide", target: 3, emoji: "🙆", unit: "40kg * 40rep" },
     { name: "Gym Chest Up", target: 3, emoji: "🧎", unit: "35kg * 40rep" },
     { name: "Gym Biceps", target: 4, emoji: "💪", unit: "35kg * 40rep" },
-    { name: "Gym Treadmill", target: 5, emoji: "🏃", unit: "250cal" },
+    { name: "Gym Treadmill", target: 5, emoji: "🏃", unit: "200cal" },
     { name: "Gym Robe Pull Down", target: 3, emoji: "🤾‍♂️", unit: "35kg * 40rep" },
     { name: "Gym Robe Pull", target: 3, emoji: "🤾", unit: "35kg * 40rep" },
     { name: "Gym Weight Lift Reverse", target: 4, emoji: "🏋️", unit: "35kg * 40rep" },

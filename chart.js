@@ -195,7 +195,7 @@ async function embedImageOnPage(pageId, imageUrl, captionText) {
     `https://api.notion.com/v1/blocks/${pageId}/children`,
     {
       children: [
-        { object: "block", type: "heading_2", heading_2: { rich_text: [{ type: "text", text: { content: captionText } }] } },
+        //{ object: "block", type: "heading_2", heading_2: { rich_text: [{ type: "text", text: { content: captionText } }] } },
         { object: "block", type: "image", image: { type: "external", external: { url: imageUrl } } }
       ]
     },
@@ -203,30 +203,38 @@ async function embedImageOnPage(pageId, imageUrl, captionText) {
   );
 }
 
-async function removeOldChartsForWeek(pageId, weekLabel) {
+
+// remove old charts for current week
+async function removeOldChartsForWeek(pageId, weekStart, weekEnd) {
   try {
     const res = await axios.get(
       `https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`,
-      { headers }
+      { headers: notionHeaders }
     );
 
-    // Find image blocks with caption or title containing the current week label
-    const imageBlocks = res.data.results.filter(b => 
-      b.type === "image" &&
-      (
-        b.image.caption?.some(c => c.plain_text.includes(weekLabel)) || 
-        (b.image.external?.url && b.image.external.url.includes(weekLabel.replace(/\s+/g, "_")))
-      )
-    );
+    const thisWeekKey = `week_${weekStart}_to_${weekEnd}`;
 
-    for (const block of imageBlocks) {
-      await axios.delete(`https://api.notion.com/v1/blocks/${block.id}`, { headers });
-      console.log(`🗑️ Deleted old chart block for week ${weekLabel}`);
+    for (const block of res.data.results) {
+      if (
+        block.type === "image" &&
+        block.image.type === "external" &&
+        block.image.external.url.includes(thisWeekKey)
+      ) {
+        console.log(`🗑 Removing old chart block ${block.id}`);
+        await axios.delete(
+          `https://api.notion.com/v1/blocks/${block.id}`,
+          { headers: notionHeaders }
+        );
+      }
     }
   } catch (err) {
-    console.error("⚠️ Could not remove old chart for week:", err.response?.data || err.message);
+    console.error(
+      "❌ Error removing old charts:",
+      err.response?.data || err.message
+    );
   }
 }
+
 
 
 // ---------- Main ----------
@@ -311,6 +319,7 @@ async function removeOldChartsForWeek(pageId, weekLabel) {
     } catch (err) {
       console.error("⚠️ Could not remove old chart(s):", err.response?.data || err.message);
     }
+    //await removeOldChartsForWeek(DASHBOARD_PAGE_ID, weekStart, weekEnd);
     // 5) Embed in Notion
     try {
       await embedImageOnPage(DASHBOARD_PAGE_ID, publicUrl, title);
