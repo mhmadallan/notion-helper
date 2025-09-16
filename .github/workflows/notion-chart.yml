@@ -69,4 +69,4 @@ jobs:
 
       - name: Build & embed weekly chart
         if: steps.cache.outputs.cache-hit != 'true'
-        run: node chart_cloudinary.js
+        run: node chart.js
