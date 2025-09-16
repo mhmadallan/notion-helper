@@ -2,7 +2,7 @@ name: Notion Daily Tasks (00:01 Berlin)
 
 on:
   schedule:
-    - cron: "1 2 * * *"   # one of these hits 00:01 Berlin across DST
+    - cron: "1 2 * * *"   # one of these hits 04:01 Berlin across DST
     - cron: "1 3 * * *"
   workflow_dispatch: {}
 
@@ -41,7 +41,7 @@ jobs:
           echo "Now Berlin time: $BERLIN_TIME, date: $BERLIN_DATE"
 
       # Gate: accept runs between 00:00–00:10 Berlin
-      - name: Gate to 00:00–00:10 Berlin window
+      - name: Gate to 04:00–04:10 Berlin window
         run: |
           if [ "$BERLIN_TIME" -lt "0400" ] || [ "$BERLIN_TIME" -gt "0410" ]; then
             echo "Outside window (Berlin $BERLIN_TIME). Skipping."
