@@ -2,8 +2,8 @@ name: Notion Weekly Chart (23:59 Berlin)
 
 on:
   schedule:
+    - cron: "59 21 * * *"
     - cron: "59 22 * * *"
-    - cron: "59 23 * * *"
   workflow_dispatch: {}
 
 concurrency:
